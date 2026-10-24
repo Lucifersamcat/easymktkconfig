@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configuración Directa: Switch Cisco 2960-S &amp; MikroTik hAP lite</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    :root {
+      --background: #f8fafc;
+      --foreground: #0f172a;
+      --card: #ffffff;
+      --muted-foreground: #475569;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --primary-foreground: #ffffff;
+      --secondary: #e2e8f0;
+      --secondary-foreground: #1e293b;
+    }
+    html.dark {
+      --background: #0b1120;
+      --foreground: #f1f5f9;
+      --card: #111827;
+      --muted-foreground: #94a3b8;
+      --border: #1e293b;
+      --primary: #3b82f6;
+      --primary-foreground: #ffffff;
+      --secondary: #1e293b;
+      --secondary-foreground: #e2e8f0;
+    }
+    body {
+      background-color: var(--background);
+      color: var(--foreground);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+    }
+    pre {
+      tab-size: 2;
+      background-color: var(--background);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 0.85rem;
+      overflow-x: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.75rem;
+      line-height: 1.5;
+    }
+    header, section > div {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.15rem;
+      margin-bottom: 1rem;
+    }
+    input, select {
+      background-color: var(--background);
+      color: var(--foreground);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 0.35rem 0.5rem;
+    }
+    button {
+      cursor: pointer;
+      border-radius: 0.5rem;
+      padding: 0.4rem 0.75rem;
+      border: 1px solid var(--border);
+      background-color: var(--primary);
+      color: var(--primary-foreground);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] antialiased p-4 md:p-6 max-w-7xl mx-auto">
+
+  <!-- ENCABEZADO -->
+  <header class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 mb-6 shadow-sm">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <span class="inline-block px-3 py-1 rounded-full bg-[var(--secondary)] text-[var(--secondary-foreground)] text-xs font-bold mb-2">
+          GUÍA EXCLUSIVA DE CONFIGURACIÓN • JANIO-SW (172.22.X.0/24)
+        </span>
+        <h1 class="text-xl md:text-2xl font-bold text-[var(--foreground)]">
+          Configuración Paso a Paso: Switch Cisco 2960-S + MikroTik hAP lite
+        </h1>
+        <p class="text-xs text-[var(--muted-foreground)] mt-1">
+          Solo los comandos y pasos de WinBox/CLI necesarios para configurar ambos equipos en clase.
+        </p>
+      </div>
+
+      <!-- BOTONES DE DESCARGA DIRECTA Y TEMA -->
+      <div class="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onclick="downloadScript('cisco')"
+          class="px-3.5 py-2 rounded-xl bg-[var(--secondary)] text-[var(--secondary-foreground)] border border-[var(--border)] text-xs font-semibold hover:opacity-90"
+        >
+          ⬇️ Descargar Cisco (.txt)
+        </button>
+        <button
+          type="button"
+          onclick="downloadScript('mikrotik')"
+          class="px-3.5 py-2 rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-semibold hover:opacity-90 shadow-sm"
+        >
+          ⬇️ Descargar MikroTik (.rsc)
+        </button>
+        <button
+          type="button"
+          onclick="document.documentElement.classList.toggle('dark')"
+          class="px-3 py-2 rounded-xl bg-[var(--secondary)] text-[var(--secondary-foreground)] border border-[var(--border)] text-xs font-semibold hover:opacity-90"
+        >
+          🌗 Tema
+        </button>
+      </div>
+    </div>
+
+    <!-- BARRA DE PARÁMETROS RÁPIDOS -->
+    <div class="mt-4 pt-4 border-t border-[var(--border)] grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 text-xs">
+      <div>
+        <label class="block text-[var(--muted-foreground)] font-medium mb-1">Switch Cisco</label>
+        <input id="p-sw-name" type="text" value="JANIO-SW" oninput="renderAll()" class="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-2 py-1.5 text-[var(--foreground)] font-mono" />
+      </div>
+      <div>
+        <label class="block text-[var(--muted-foreground)] font-medium mb-1">Puertos Switch</label>
+        <select id="p-sw-port" onchange="renderAll()" class="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-2 py-1.5 text-[var(--foreground)] font-mono">
+          <option value="gi1/0/">gi1/0/ (2960-S)</option>
+          <option value="fa0/">fa0/ (2960)</option>
+          <option value="gi0/">gi0/ (vIOS)</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[var(--muted-foreground)] font-medium mb-1">Tu Octeto (172.X)</label>
+        <input id="p-my-oct" type="number" value="22" oninput="renderAll()" class="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-2 py-1.5 text-[var(--foreground)] font-mono" />
+      </div>
+      <div>
+        <label class="block text-[var(--muted-foreground)] font-medium mb-1">WiFi SSID</label>
+        <input id="p-wifi-ssid" type="text" value="WiFiCano" oninput="renderAll()" class="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-2 py-1.5 text-[var(--foreground)] font-mono" />
+      </div>
+      <div>
+        <label class="block text-[var(--muted-foreground)] font-medium mb-1">Clave WiFi</label>
+        <input id="p-wifi-pass" type="text" value="mikrotik123" oninput="renderAll()" class="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-2 py-1.5 text-[var(--foreground)] font-mono" />
+      </div>
+      <div>
+        <label class="block text-[var(--muted-foreground)] font-medium mb-1">Vecino 1 (Tu IP / Peer)</label>
+        <div class="flex gap-1">
+          <input id="p-v1-my" type="text" value="10.0.0.1/30" oninput="renderAll()" class="w-1/2 bg-[var(--background)] border border-[var(--border)] rounded-lg px-1.5 py-1.5 text-[var(--foreground)] font-mono" title="Tu IP /30 con Vecino 1" />
+          <input id="p-v1-peer" type="text" value="10.0.0.2" oninput="renderAll()" class="w-1/2 bg-[var(--background)] border border-[var(--border)] rounded-lg px-1.5 py-1.5 text-[var(--foreground)] font-mono" title="IP del Vecino 1" />
+        </div>
+      </div>
+      <div>
+        <label class="block text-[var(--muted-foreground)] font-medium mb-1">Vecino 2 (Tu IP / Peer)</label>
+        <div class="flex gap-1">
+          <input id="p-v2-my" type="text" value="10.0.0.9/30" oninput="renderAll()" class="w-1/2 bg-[var(--background)] border border-[var(--border)] rounded-lg px-1.5 py-1.5 text-[var(--foreground)] font-mono" title="Tu IP /30 con Vecino 2" />
+          <input id="p-v2-peer" type="text" value="10.0.0.10" oninput="renderAll()" class="w-1/2 bg-[var(--background)] border border-[var(--border)] rounded-lg px-1.5 py-1.5 text-[var(--foreground)] font-mono" title="IP del Vecino 2" />
+        </div>
+      </div>
+      <div>
+        <label class="block text-[var(--muted-foreground)] font-medium mb-1">Octetos V1 / V2</label>
+        <div class="flex gap-1">
+          <input id="p-v1-oct" type="number" value="21" oninput="renderAll()" class="w-1/2 bg-[var(--background)] border border-[var(--border)] rounded-lg px-2 py-1.5 text-[var(--foreground)] font-mono" title="Octeto 172.X del Vecino 1" />
+          <input id="p-v2-oct" type="number" value="23" oninput="renderAll()" class="w-1/2 bg-[var(--background)] border border-[var(--border)] rounded-lg px-2 py-1.5 text-[var(--foreground)] font-mono" title="Octeto 172.X del Vecino 2" />
+        </div>
+      </div>
+    </div>
+
+    <!-- SELECTOR DE VISTA -->
+    <div class="flex flex-wrap gap-2 mt-4">
+      <button type="button" id="btn-view-both" onclick="setView('both')" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[var(--primary)] text-[var(--primary-foreground)]">
+        Ver Ambos (Cisco + MikroTik)
+      </button>
+      <button type="button" id="btn-view-cisco" onclick="setView('cisco')" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[var(--secondary)] text-[var(--secondary-foreground)]">
+        Solo Switch Cisco 2960-S
+      </button>
+      <button type="button" id="btn-view-mikrotik" onclick="setView('mikrotik')" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[var(--secondary)] text-[var(--secondary-foreground)]">
+        Solo MikroTik hAP lite
+      </button>
+    </div>
+  </header>
+
+  <!-- RESUMEN RÁPIDO DE CABLEADO FÍSICO -->
+  <section class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 mb-6 shadow-sm text-xs">
+    <div class="font-bold text-sm mb-2">🔌 Resumen de Conexión Física de Cables:</div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
+      <div class="p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)]">
+        <strong>1. Internet WAN:</strong><br/>
+        • Cable ISP → <code>ether1</code> del MikroTik<br/>
+        • WiFi Aula → <code>wlan1</code> del MikroTik (Backup)
+      </div>
+      <div class="p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)]">
+        <strong>2. Doble enlace Switch ↔ MikroTik:</strong><br/>
+        • <code>ether2</code> y <code>ether3</code> (MikroTik) ↔ Puertos <code>1</code> y <code>2</code> (Switch Cisco) en <strong>LACP</strong>
+      </div>
+      <div class="p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)]">
+        <strong>3. Cables a tus 2 Vecinos:</strong><br/>
+        • Vecino 1 → <code>ether4</code> del MikroTik<br/>
+        • Vecino 2 → <strong>Puerto 24 del Switch Cisco (VLAN 40)</strong>
+      </div>
+      <div class="p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)]">
+        <strong>4. Tu PC en el Switch Cisco:</strong><br/>
+        • Ptos <code>3-8</code>: VLAN 10 (<code>estudiantes</code>)<br/>
+        • Ptos <code>9-16</code>: VLAN 20 (<code>docentes</code>)<br/>
+        • Ptos <code>17-23</code>: VLAN 30 (<code>administracion</code>)
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTENEDOR DE LAS DOS SECCIONES DE CONFIGURACIÓN -->
+  <div id="main-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- =================================================================== -->
+    <!-- COLUMNA 1: CONFIGURACIÓN DEL SWITCH CISCO 2960-S                    -->
+    <!-- =================================================================== -->
+    <section id="sec-cisco" class="space-y-4">
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-lg font-bold text-[var(--foreground)]">
+            🖧 PARTE 1: Configurar Switch Cisco 2960-S
+          </h2>
+          <span class="text-xs px-2.5 py-1 rounded-lg bg-[var(--secondary)] text-[var(--secondary-foreground)] font-mono">
+            Consola Serial (9600 bps)
+          </span>
+        </div>
+        <p class="text-xs text-[var(--muted-foreground)]">
+          Puedes ir copiando paso por paso o copiar el <strong>Script Completo Todo-en-Uno</strong> al final de esta columna.
+        </p>
+      </div>
+
+      <!-- Cisco Paso 0: Limpiar Switch -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-bold">Paso 0 (Opcional): Borrar configuración previa del Switch</h3>
+          <button type="button" onclick="copyText('c-step0', this)" class="px-2.5 py-1 rounded-lg bg-[var(--secondary)] text-[var(--secondary-foreground)] text-xs font-semibold">📋 Copiar</button>
+        </div>
+        <pre id="c-step0" class="bg-[var(--background)] border border-[var(--border)] rounded-xl p-3 text-xs font-mono overflow-x-auto">enable
+delete flash:vlan.dat
+erase startup-config
+reload</pre>
+      </div>
+
+      <!-- Cisco Paso 1: Básico y SSH -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-bold">Paso 1: Nombre, Contraseñas y Acceso Remoto SSH v2</h3>
+          <button type="button" onclick="copyText('c-step1', this)" class="px-2.5 py-1 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-semibold">📋 Copiar</button>
+        </div>
+        <pre id="c-step1" class="bg-[var(--background)] border border-[var(--border)] rounded-xl p-3 text-xs font-mono overflow-x-auto"></pre>
+      </div>
+
+      <!-- Cisco Paso 2: VLANs y SVI -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-bold">Paso 2: Crear VLANs (10, 20, 30, 40) e IP Administrativa (SVI VLAN 30)</h3>
+          <button type="button" onclick="copyText('c-step2', this)" class="px-2.5 py-1 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-semibold">📋 Copiar</button>
+        </div>
+        <pre id="c-step2" class="bg-[var(--background)] border border-[var(--border)] rounded-xl p-3 text-xs font-mono overflow-x-auto"></pre>
+      </div>
+
+      <!-- Cisco Paso 3: EtherChannel LACP y Troncal -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-bold">Paso 3: EtherChannel LACP (Puertos 1 y 2) + Troncal 802.1Q</h3>
+          <button type="button" onclick="copyText('c-step3', this)" class="px-2.5 py-1 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-semibold">📋 Copiar</button>
+        </div>
+        <pre id="c-step3" class="bg-[var(--background)] border border-[var(--border)] rounded-xl p-3 text-xs font-mono overflow-x-auto"></pre>
+      </div>
+
+      <!-- Cisco Paso 4: Puertos de Acceso y Guardar -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-bold">Paso 4: Asignar Puertos a las VLANs (3-8, 9-16, 17-23 y 24) y Guardar</h3>
+          <button type="button" onclick="copyText('c-step4', this)" class="px-2.5 py-1 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-semibold">📋 Copiar</button>
+        </div>
+        <pre id="c-step4" class="bg-[var(--background)] border border-[var(--border)] rounded-xl p-3 text-xs font-mono overflow-x-auto"></pre>
+      </div>
+
+      <!-- Cisco Script Completo Todo en Uno -->
+      <div class="bg-[var(--card)] border-2 border-[var(--primary)] rounded-2xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <span class="text-xs font-bold text-[var(--primary)] uppercase">SCRIPT TODO-EN-UNO CISCO</span>
+            <h3 class="text-sm font-bold">Pegar todo de una sola vez en el Switch Cisco</h3>
+          </div>
+          <button type="button" onclick="copyText('c-all', this)" class="px-3 py-1.5 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-bold">📋 Copiar Todo Cisco</button>
+        </div>
+        <pre id="c-all" class="bg-[var(--background)] border border-[var(--border)] rounded-xl p-3 text-xs font-mono overflow-x-auto max-h-80"></pre>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- COLUMNA 2: CONFIGURACIÓN DEL MIKROTIK HAP LITE                      -->
+    <!-- =================================================================== -->
+    <section id="sec-mikrotik" class="space-y-4">
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-lg font-bold text-[var(--foreground)]">
+            📡 PARTE 2: Configurar MikroTik hAP lite
+          </h2>
+          <span class="text-xs px-2.5 py-1 rounded-lg bg-[var(--secondary)] text-[var(--secondary-foreground)] font-mono">
+            WinBox (MAC) → New Terminal
+          </span>
+        </div>
+        <p class="text-xs text-[var(--muted-foreground)]">
+          Conecta tu PC a <code>ether4</code> para entrar por <strong>MAC-WinBox</strong>, haz el Paso 0 (Reset en blanco) y luego aplica los pasos del 1 al 4.
+        </p>
+      </div>
+
+      <!-- MikroTik Paso 0: Reset en blanco -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-bold">Paso 0: Dejar el MikroTik en Blanco (Sin configuración de fábrica)</h3>
+          <button type="button" onclick="copyText('m-step0', this)" class="px-2.5 py-1 rounded-lg bg-[var(--secondary)] text-[var(--secondary-foreground)] text-xs font-semibold">📋 Copiar</button>
+        </div>
+        <p class="text-xs text-[var(--muted-foreground)] mb-2">
+          En WinBox: <strong>System → Reset Configuration</strong> → marca <em>No Default Configuration</em> y <em>Do Not Backup</em>. O por terminal:
+        </p>
+        <pre id="m-step0" class="bg-[var(--background)] border border-[var(--border)] rounded-xl p-3 text-xs font-mono overflow-x-auto">/system reset-configuration no-defaults=yes skip-backup=yes</pre>
+      </div>
+
+      <!-- MikroTik Paso 1: Identidad y Bonding LACP + VLANs -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-bold">Paso 1: Identidad, Bonding LACP (ether2 y ether3) y VLANs (10, 20, 30, 40)</h3>
+          <button type="button" onclick="copyText('m-step1', this)" class="px-2.5 py-1 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-semibold">📋 Copiar</button>
+        </div>
+        <pre id="m-step1" class="bg-[var(--background)] border border-[var(--border)] rounded-xl p-3 text-xs font-mono overflow-x-auto"></pre>
+      </div>
+
+      <!-- MikroTik Paso 2: IPs Gateway y 3 Servidores DHCP -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-bold">Paso 2: IPs Gateway (.1/24) y los 3 Servidores DHCP (VLAN 10, 20 y 30)</h3>
+          <button type="button" onclick="copyText('m-step2', this)" class="px-2.5 py-1 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-semibold">📋 Copiar</button>
+        </div>
+        <pre id="m-step2" class="bg-[var(--background)] border border-[var(--border)] rounded-xl p-3 text-xs font-mono overflow-x-auto"></pre>
+      </div>
+
+      <!-- MikroTik Paso 3: Doble WAN con Failover (Cable + WiFi) + NAT -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-bold">Paso 3: Internet por Cable (Dist=1) + WiFi como Backup (Dist=2) + NAT</h3>
+          <button type="button" onclick="copyText('m-step3', this)" class="px-2.5 py-1 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-semibold">📋 Copiar</button>
+        </div>
+        <pre id="m-step3" class="bg-[var(--background)] border border-[var(--border)] rounded-xl p-3 text-xs font-mono overflow-x-auto"></pre>
+      </div>
+
+      <!-- MikroTik Paso 4: Enlaces a los 2 Vecinos y Rutas Estáticas / OSPF -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-bold">Paso 4: Enlaces /30 a Vecino 1 y Vecino 2 + Rutas Estáticas y OSPF</h3>
+          <button type="button" onclick="copyText('m-step4', this)" class="px-2.5 py-1 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-semibold">📋 Copiar</button>
+        </div>
+        <pre id="m-step4" class="bg-[var(--background)] border border-[var(--border)] rounded-xl p-3 text-xs font-mono overflow-x-auto"></pre>
+      </div>
+
+      <!-- MikroTik Script Completo Todo en Uno -->
+      <div class="bg-[var(--card)] border-2 border-[var(--primary)] rounded-2xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <span class="text-xs font-bold text-[var(--primary)] uppercase">SCRIPT TODO-EN-UNO MIKROTIK</span>
+            <h3 class="text-sm font-bold">Pegar todo de una sola vez en New Terminal</h3>
+          </div>
+          <button type="button" onclick="copyText('m-all', this)" class="px-3 py-1.5 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-bold">📋 Copiar Todo MikroTik</button>
+        </div>
+        <pre id="m-all" class="bg-[var(--background)] border border-[var(--border)] rounded-xl p-3 text-xs font-mono overflow-x-auto max-h-80"></pre>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    function getSubnet30(ipCidr) {
+      const cleanIp = ipCidr.split('/')[0].trim();
+      const parts = cleanIp.split('.');
+      if (parts.length !== 4) return ipCidr;
+      const last = parseInt(parts[3], 10);
+      if (isNaN(last)) return ipCidr;
+      return `${parts[0]}.${parts[1]}.${parts[2]}.${last & 252}/30`;
+    }
+
+    function renderAll() {
+      const swName = document.getElementById('p-sw-name').value.trim() || 'JANIO-SW';
+      const swPort = document.getElementById('p-sw-port').value;
+      const myOct = document.getElementById('p-my-oct').value.trim() || '22';
+      const wifiSsid = document.getElementById('p-wifi-ssid').value.trim() || 'WiFiCano';
+      const wifiPass = document.getElementById('p-wifi-pass').value.trim() || 'mikrotik123';
+
+      const v1My = document.getElementById('p-v1-my').value.trim() || '10.0.0.1/30';
+      const v1Peer = document.getElementById('p-v1-peer').value.trim() || '10.0.0.2';
+      const v1Oct = document.getElementById('p-v1-oct').value.trim() || '21';
+
+      const v2My = document.getElementById('p-v2-my').value.trim() || '10.0.0.9/30';
+      const v2Peer = document.getElementById('p-v2-peer').value.trim() || '10.0.0.10';
+      const v2Oct = document.getElementById('p-v2-oct').value.trim() || '23';
+
+      const v1Net = getSubnet30(v1My);
+      const v2Net = getSubnet30(v2My);
+      const routerId = v1My.split('/')[0];
+
+      const cStep1 = `enable
+configure terminal
+hostname ${swName}
+no ip domain-lookup
+enable secret class
+service password-encryption
+banner motd #Acceso Exclusivo Autorizados - Switch ${swName}#
+
+line console 0
+ password cisco
+ login
+ logging synchronous
+ exit
+
+ip domain-name cano.local
+username admin privilege 15 secret cisco123
+crypto key generate rsa general-keys modulus 1024
+ip ssh version 2
+
+line vty 0 15
+ transport input ssh telnet
+ login local
+ logging synchronous
+ exit`;
+
+      const cStep2 = `vlan 10
+ name estudiantes
+vlan 20
+ name docentes
+vlan 30
+ name administracion
+exit
+
+interface vlan 30
+ description SVI Administracion ${swName}
+ ip address 172.${myOct}.30.2 255.255.255.0
+ no shutdown
+ exit
+
+ip default-gateway 172.${myOct}.30.1`;
+
+      const cStep3 = `interface range ${swPort}1 - 2
+ description Bonding LACP hacia MikroTik (ether2 y ether3)
+ shutdown
+ channel-group 1 mode active
+ exit
+
+interface port-channel 1
+ description Troncal 802.1Q hacia MikroTik
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30
+ exit
+
+interface range ${swPort}1 - 2
+ no shutdown
+ exit`;
+
+      const cStep4 = `! Puertos 3 al 8 -> VLAN 10 (estudiantes)
+interface range ${swPort}3 - 8
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast
+ no shutdown
+ exit
+
+! Puertos 9 al 16 -> VLAN 20 (docentes)
+interface range ${swPort}9 - 16
+ switchport mode access
+ switchport access vlan 20
+ spanning-tree portfast
+ no shutdown
+ exit
+
+! Puertos 17 al 24 -> VLAN 30 (administracion)
+interface range ${swPort}17 - 24
+ switchport mode access
+ switchport access vlan 30
+ spanning-tree portfast
+ no shutdown
+ end
+
+copy running-config startup-config`;
+
+      const cAll = `${cStep1}\n\n${cStep2}\n\n${cStep3}\n\n${cStep4}`;
+
+      document.getElementById('c-step1').textContent = cStep1;
+      document.getElementById('c-step2').textContent = cStep2;
+      document.getElementById('c-step3').textContent = cStep3;
+      document.getElementById('c-step4').textContent = cStep4;
+      document.getElementById('c-all').textContent = cAll;
+
+      const mStep1 = `/system identity set name=Mkt-${swName}
+/user set admin password=mikro123
+
+/interface ethernet
+set [ find default-name=ether1 ] name=ether1-Vecino2
+set [ find default-name=ether2 ] name=ether2-SW
+set [ find default-name=ether3 ] name=ether3-SW
+set [ find default-name=ether4 ] name=ether4-Vecino1
+
+/interface bonding
+add name=bonding1 slaves=ether2-SW,ether3-SW mode=802.3ad lacp-rate=30secs transmit-hash-policy=layer-2-and-3
+
+/interface vlan
+add name=vlan10-estudiantes vlan-id=10 interface=bonding1
+add name=vlan20-docentes vlan-id=20 interface=bonding1
+add name=vlan30-administracion vlan-id=30 interface=bonding1`;
+
+      const mStep2 = `/ip address
+add address=172.${myOct}.10.1/24 interface=vlan10-estudiantes comment="Gateway VLAN 10 Estudiantes"
+add address=172.${myOct}.20.1/24 interface=vlan20-docentes comment="Gateway VLAN 20 Docentes"
+add address=172.${myOct}.30.1/24 interface=vlan30-administracion comment="Gateway VLAN 30 Administracion"
+
+/ip pool
+add name=pool-vlan10 ranges=172.${myOct}.10.10-172.${myOct}.10.200
+add name=pool-vlan20 ranges=172.${myOct}.20.10-172.${myOct}.20.200
+add name=pool-vlan30 ranges=172.${myOct}.30.10-172.${myOct}.30.200
+
+/ip dhcp-server
+add name=dhcp-estudiantes interface=vlan10-estudiantes address-pool=pool-vlan10 lease-time=1h disabled=no
+add name=dhcp-docentes interface=vlan20-docentes address-pool=pool-vlan20 lease-time=1h disabled=no
+add name=dhcp-admin interface=vlan30-administracion address-pool=pool-vlan30 lease-time=1h disabled=no
+
+/ip dhcp-server network
+add address=172.${myOct}.10.0/24 gateway=172.${myOct}.10.1 dns-server=172.${myOct}.10.1,8.8.8.8
+add address=172.${myOct}.20.0/24 gateway=172.${myOct}.20.1 dns-server=172.${myOct}.20.1,8.8.8.8
+add address=172.${myOct}.30.0/24 gateway=172.${myOct}.30.1 dns-server=172.${myOct}.30.1,8.8.8.8`;
+
+      const mStep3 = `# Internet WAN por WiFi (wlan1)
+/interface wireless security-profiles
+add name=perfil-wifi-clase mode=dynamic-keys authentication-types=wpa-psk,wpa2-psk \\
+    wpa-pre-shared-key="${wifiPass}" wpa2-pre-shared-key="${wifiPass}"
+
+/interface wireless
+set [ find default-name=wlan1 ] mode=station band=2ghz-b/g/n ssid="${wifiSsid}" \\
+    security-profile=perfil-wifi-clase disabled=no
+
+/ip dhcp-client
+add interface=wlan1 add-default-route=yes default-route-distance=1 use-peer-dns=yes disabled=no
+
+# DNS y NAT Masquerade en salida WAN (wlan1)
+/ip dns set servers=8.8.8.8,8.8.4.4 allow-remote-requests=yes
+
+/ip firewall nat
+add chain=srcnat out-interface=wlan1 action=masquerade comment="NAT WAN WiFi"`;
+
+      const mStep4 = `# 1. Direcciones IP /30 hacia Vecino 1 (ether4) y Vecino 2 (ether1)
+/ip address
+add address=${v1My} interface=ether4-Vecino1 comment="Enlace /30 Vecino 1"
+add address=${v2My} interface=ether1-Vecino2 comment="Enlace /30 Vecino 2"
+
+# 2. Rutas Estáticas hacia Vecino 1 (Principal por ${v1Peer} y Respaldo por ${v2Peer})
+/ip route
+add dst-address=172.${v1Oct}.10.0/24 gateway=${v1Peer} distance=1 check-gateway=ping
+add dst-address=172.${v1Oct}.20.0/24 gateway=${v1Peer} distance=1 check-gateway=ping
+add dst-address=172.${v1Oct}.30.0/24 gateway=${v1Peer} distance=1 check-gateway=ping
+add dst-address=172.${v1Oct}.10.0/24 gateway=${v2Peer} distance=2
+add dst-address=172.${v1Oct}.20.0/24 gateway=${v2Peer} distance=2
+add dst-address=172.${v1Oct}.30.0/24 gateway=${v2Peer} distance=2
+
+# 3. Rutas Estáticas hacia Vecino 2 (Principal por ${v2Peer} y Respaldo por ${v1Peer})
+add dst-address=172.${v2Oct}.10.0/24 gateway=${v2Peer} distance=1 check-gateway=ping
+add dst-address=172.${v2Oct}.20.0/24 gateway=${v2Peer} distance=1 check-gateway=ping
+add dst-address=172.${v2Oct}.30.0/24 gateway=${v2Peer} distance=1 check-gateway=ping
+add dst-address=172.${v2Oct}.10.0/24 gateway=${v1Peer} distance=2
+add dst-address=172.${v2Oct}.20.0/24 gateway=${v1Peer} distance=2
+add dst-address=172.${v2Oct}.30.0/24 gateway=${v1Peer} distance=2
+
+# 4. (Opcional) Si el profesor pide OSPF en RouterOS v7 (7.20 / 7.25):
+/routing ospf instance
+add name=ospf-v2 version=2 router-id=172.${myOct}.30.1
+/routing ospf area
+add name=backbone instance=ospf-v2 area-id=0.0.0.0
+/routing ospf interface-template
+add area=backbone interfaces=vlan10-estudiantes,vlan20-docentes,vlan30-administracion passive
+add area=backbone interfaces=ether4-Vecino1,ether1-Vecino2`;
+
+      const mAll = `${mStep1}\n\n${mStep2}\n\n${mStep3}\n\n${mStep4}`;
+
+      document.getElementById('m-step1').textContent = mStep1;
+      document.getElementById('m-step2').textContent = mStep2;
+      document.getElementById('m-step3').textContent = mStep3;
+      document.getElementById('m-step4').textContent = mStep4;
+      document.getElementById('m-all').textContent = mAll;
+    }
+
+    function setView(mode) {
+      const grid = document.getElementById('main-grid');
+      const secCisco = document.getElementById('sec-cisco');
+      const secMkt = document.getElementById('sec-mikrotik');
+      const btnBoth = document.getElementById('btn-view-both');
+      const btnCisco = document.getElementById('btn-view-cisco');
+      const btnMkt = document.getElementById('btn-view-mikrotik');
+
+      const activeCls = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[var(--primary)] text-[var(--primary-foreground)]';
+      const inactiveCls = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[var(--secondary)] text-[var(--secondary-foreground)]';
+
+      if (mode === 'both') {
+        grid.className = 'grid grid-cols-1 lg:grid-cols-2 gap-6';
+        secCisco.style.display = '';
+        secMkt.style.display = '';
+        btnBoth.className = activeCls;
+        btnCisco.className = inactiveCls;
+        btnMkt.className = inactiveCls;
+      } else if (mode === 'cisco') {
+        grid.className = 'grid grid-cols-1 gap-6';
+        secCisco.style.display = '';
+        secMkt.style.display = 'none';
+        btnBoth.className = inactiveCls;
+        btnCisco.className = activeCls;
+        btnMkt.className = inactiveCls;
+      } else {
+        grid.className = 'grid grid-cols-1 gap-6';
+        secCisco.style.display = 'none';
+        secMkt.style.display = '';
+        btnBoth.className = inactiveCls;
+        btnCisco.className = inactiveCls;
+        btnMkt.className = activeCls;
+      }
+    }
+
+    function copyText(id, btn) {
+      const text = document.getElementById(id).textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const old = btn.textContent;
+        btn.textContent = '✅ ¡Copiado!';
+        setTimeout(() => { btn.textContent = old; }, 1600);
+      });
+    }
+
+    function downloadScript(type) {
+      const swName = document.getElementById('p-sw-name').value.trim() || 'JANIO-SW';
+      const content = type === 'cisco'
+        ? document.getElementById('c-all').textContent
+        : document.getElementById('m-all').textContent;
+      const filename = type === 'cisco'
+        ? `${swName}_Cisco_2960S.txt`
+        : `Mkt_${swName}_Config.rsc`;
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    renderAll();
+  </script>
+</body>
+</html>
